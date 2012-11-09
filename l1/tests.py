@@ -67,4 +67,5 @@ class Test1(unittest.TestCase):
 
 
 suite = unittest.TestLoader().loadTestsFromTestCase(Test1)
-unittest.TextTestRunner(verbosity=1).run(suite)
+if not unittest.TextTestRunner(verbosity=1).run(suite).wasSuccessful():
+    sys.exit(1)
