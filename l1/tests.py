@@ -53,6 +53,9 @@ class Test1(unittest.TestCase):
         c = self.a / s
         self.assertEqual(output[1], str([b, c, c, b, b]))
 
+    def test_z6(self):
+        pass
+
     def test_z7(self):
         import z7
         self.assertEqual(z7.move([0, 0, 0, 1, 0], 1), [0, 0, 0, 0, 1])

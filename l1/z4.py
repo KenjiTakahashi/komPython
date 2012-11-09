@@ -4,8 +4,8 @@
 from z3 import p
 
 
-def n(p):
+def norm(p):
     return [pp / sum(p) for pp in p]
 
 
-print(n(p))
+print(norm(p))
