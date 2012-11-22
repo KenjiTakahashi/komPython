@@ -16,7 +16,10 @@ class Test1(unittest.TestCase):
 
     def test_z1(self):
         import z1
-        self.assertEqual(sys.stdout.getvalue(), "[0.2, 0.2, 0.2, 0.2, 0.2]\n")
+        self.assertEqual(
+            sys.stdout.getvalue(),
+            "[{0}, {0}, {0}, {0}, {0}]\n".format(1. / 5)
+        )
 
     def test_z2(self):
         import z2
@@ -62,8 +65,10 @@ class Test1(unittest.TestCase):
 
     def test_z8(self):
         import z8
-        self.assertEqual(z8.move([0, 1, 0, 0, 0], 2), [0, 0, .1, .8, .1])
-        self.assertEqual(z8.move([0, .5, 0, .5, 0], 2), [.4, .05, .05, .4, .1])
+        self.assertEqual(z8.move2([0, 1, 0, 0, 0], 2), [0, 0, .1, .8, .1])
+        self.assertEqual(
+            z8.move2([0, .5, 0, .5, 0], 2), [.4, .05, .05, .4, .1]
+        )
 
 
 suite = unittest.TestLoader().loadTestsFromTestCase(Test1)
