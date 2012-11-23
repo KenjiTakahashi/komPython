@@ -14,13 +14,6 @@ class Test1(unittest.TestCase):
     def tearDown(self):
         sys.stdout = self.held
 
-    def test_z1(self):
-        import z1
-        self.assertEqual(
-            sys.stdout.getvalue(),
-            "[{0}, {0}, {0}, {0}, {0}]\n".format(1. / 5)
-        )
-
     def test_z2(self):
         import z2
         self.assertEqual(

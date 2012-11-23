@@ -10,8 +10,6 @@ motions = [1, 1]
 measurements = ["red", 'green']
 
 
-for measur in measurements:
-    for motion in motions:
-        #p = sense(move2(p, motion), measur)
-        p = move2(sense(p, measur), motion)
+for measur, motion in zip(measurements, motions):
+    p = move2(sense(p, measur), motion)
 print(p)
