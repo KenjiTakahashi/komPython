@@ -16,10 +16,7 @@ class Test1(unittest.TestCase):
 
     def test_z2(self):
         import z2
-        self.assertEqual(
-            sys.stdout.getvalue(),
-            "{0}\n".format([self.a, .12, .12, self.a, self.a])
-        )
+        self.assertEqual(z2.p, [self.a, .12, .12, self.a, self.a])
 
     def test_z3(self):
         import z3
