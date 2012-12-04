@@ -39,11 +39,15 @@ class Server(object):
             self.serve()
         print("Terminating...")
 
+    def calculatePosition(self):
+        while True:
+            p = Position(randint(1, self.size.y), randint(1, self.size.x))
+            if p not in self.playersPositions:
+                return p
+
     def addClient(self, sock, addr):
         self.players.append(sock)
-        self.playersPositions.append(Position(
-            randint(1, self.size.y), randint(1, self.size.x)
-        ))  # FIXME: Prevent players from collapsing on each other
+        self.playersPositions.append(self.calculatePosition())
         countdown = Countdown(3, self.size, self.players.index(sock))
         for i in range(3, 0, -1):
             countdown.number = i
@@ -69,7 +73,7 @@ class Server(object):
                 for i in input:
                     try:
                         data = pickle.loads(i.recv(4096))
-                    except EOFError:
+                    except (EOFError, socket.error):
                         pass
                     else:
                         index = self.players.index(i)
@@ -127,12 +131,12 @@ class Server(object):
                 ).pop()], [])
 
     def end(self, player):
-        pass
+        for player in self.playersPositions:
+            pass
 
     def terminate(self):
         self.running = False
         for player in self.players:
-            player.shutdown(socket.SHUT_RDWR)
             player.close()
         self.server.shutdown(socket.SHUT_RDWR)
         self.server.close()
