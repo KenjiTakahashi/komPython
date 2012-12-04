@@ -8,15 +8,17 @@ import sys
 import time
 from random import randint
 from copy import copy
-from protocolObjects import Countdown, Map, Position, Mine
+from protocolObjects import Countdown, Map, Position, Mine, Result
 
 
 class Server(object):
     BACKLOG = 5
 
     def __init__(self, port, size, noOfPlayers):
+        self.endgame = None
         self.mines = list()
         self.players = list()
+        self.cemetery = list()
         self.playersPositions = list()
         self.noOfPlayers = noOfPlayers
         self.size = size
@@ -54,6 +56,12 @@ class Server(object):
         print("Sending map to {0}".format(sock.getpeername()))
         sock.sendall(pickle.dumps(Map(self.mines, self.playersPositions)))
 
+    def sendResults(self):
+        print("Sending end results to all players")
+        result = pickle.dumps(Result(*self.endgame))
+        for player in self.players:
+            player.sendall(result)
+
     def serve(self):
         while self.running:
             try:
@@ -64,8 +72,13 @@ class Server(object):
                     except EOFError:
                         pass
                     else:
-                        self.act(self.players.index(i), data.action)
-                        self.sendMap(i)
+                        index = self.players.index(i)
+                        if not index in self.cemetery:
+                            self.act(index, data.action)
+                        if self.endgame:
+                            self.sendResults()
+                        else:
+                            self.sendMap(i)
             except KeyboardInterrupt:
                 self.terminate()
 
@@ -88,6 +101,9 @@ class Server(object):
                 player + 1, position
             ))
             self.mines.append(Mine(copy(position), player))
+        elif action == 'e':
+            print("Player {0} wants to end the game".format(player + 1))
+            self.end(player)
 
     def move(self, player, position, y, x):
         ny = position.y + y
@@ -104,9 +120,14 @@ class Server(object):
         print("Player {0} moved to position {1}".format(player + 1, position))
         if mined:
             print("Player {0} stepped on a mine".format(player + 1))
-            del self.players[player]
-            del self.playersPositions[player]
-            self.mines.remove(mine)
+            self.cemetery.append(player)
+            if len(self.players) - len(self.cemetery) == 1:
+                self.endgame = ([(
+                    set(range(len(self.players))) - set(self.cemetery)
+                ).pop()], [])
+
+    def end(self, player):
+        pass
 
     def terminate(self):
         self.running = False
