@@ -7,7 +7,8 @@ import cPickle as pickle
 import sys
 import time
 from random import randint
-from protocolObjects import Countdown, Map, Position
+from copy import copy
+from protocolObjects import Countdown, Map, Position, Mine
 
 
 class Server(object):
@@ -72,29 +73,45 @@ class Server(object):
         position = self.playersPositions[player]
         if action == 'u':
             print("Player {0} wants to go up".format(player + 1))
-            self.playersPositions[player] = self.move(position, -1, 0)
+            self.move(player, position, -1, 0)
         elif action == 'd':
             print("Player {0} wants to go down".format(player + 1))
-            self.playersPositions[player] = self.move(position, 1, 0)
+            self.move(player, position, 1, 0)
         elif action == 'l':
             print("Player {0} wants to go left".format(player + 1))
-            self.playersPositions[player] = self.move(position, 0, -1)
+            self.move(player, position, 0, -1)
         elif action == 'r':
             print("Player {0} wants to go right".format(player + 1))
-            self.playersPositions[player] = self.move(position, 0, 1)
+            self.move(player, position, 0, 1)
+        elif action == 'm':
+            print("Player {0} places mine at position {1}".format(
+                player + 1, position
+            ))
+            self.mines.append(Mine(copy(position), player))
 
-    def move(self, position, y, x):
+    def move(self, player, position, y, x):
         ny = position.y + y
         nx = position.x + x
-        if ny > 0 and ny < self.size.y:
+        if ny > 0 and ny <= self.size.y:
             position.y = ny
-        if nx > 0 and nx < self.size.x:
+        if nx > 0 and nx <= self.size.x:
             position.x = nx
-        return position
+        mined = None
+        for mine in self.mines:
+            if mine.position == position:
+                mined = mine
+                break
+        print("Player {0} moved to position {1}".format(player + 1, position))
+        if mined:
+            print("Player {0} stepped on a mine".format(player + 1))
+            del self.players[player]
+            del self.playersPositions[player]
+            self.mines.remove(mine)
 
     def terminate(self):
         self.running = False
         for player in self.players:
+            player.shutdown(socket.SHUT_RDWR)
             player.close()
         self.server.shutdown(socket.SHUT_RDWR)
         self.server.close()
