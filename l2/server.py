@@ -13,9 +13,10 @@ from protocolObjects import Countdown, Map, Position
 class Server(object):
     BACKLOG = 5
 
-    def __init__(self, port, size):
+    def __init__(self, port, size, noOfPlayers):
         self.players = list()
         self.playersPositions = list()
+        self.noOfPlayers = noOfPlayers
         self.size = size
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind(('', port))
@@ -23,7 +24,7 @@ class Server(object):
         self.running = True
 
     def run(self):
-        while len(self.players) < 5:
+        while len(self.players) < self.noOfPlayers:
             try:
                 sock, addr = self.server.accept()
                 print("Received connection from {0}".format(addr))
@@ -66,12 +67,13 @@ class Server(object):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 4:
+    if len(sys.argv) != 5:
         raise AttributeError(
             "Incorrect number of arguments."
-            " Usage: <exec> <port> <map_height> <map_width>"
+            " Usage: <exec> <port> <map_height> <map_width> <no_of_players>"
         )
     Server(
         int(sys.argv[1]),
-        Position(int(sys.argv[2]), int(sys.argv[3]))
+        Position(int(sys.argv[2]), int(sys.argv[3])),
+        int(sys.argv[4])
     ).run()
