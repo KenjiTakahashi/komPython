@@ -14,6 +14,7 @@ class Server(object):
     BACKLOG = 5
 
     def __init__(self, port, size, noOfPlayers):
+        self.mines = list()
         self.players = list()
         self.playersPositions = list()
         self.noOfPlayers = noOfPlayers
@@ -46,17 +47,50 @@ class Server(object):
             print("Sending countdown {0} to {1}".format(i, addr))
             sock.sendall(pickle.dumps(countdown))
             time.sleep(1)
-        print("Sending map to {0}".format(addr))
-        sock.sendall(pickle.dumps(Map([], self.playersPositions)))
+        self.sendMap(sock)
+
+    def sendMap(self, sock):
+        print("Sending map to {0}".format(sock.getpeername()))
+        sock.sendall(pickle.dumps(Map(self.mines, self.playersPositions)))
 
     def serve(self):
         while self.running:
             try:
                 input, _, _ = select(self.players, [], [])
                 for i in input:
-                    print(pickle.loads(input))
+                    try:
+                        data = pickle.loads(i.recv(4096))
+                    except EOFError:
+                        pass
+                    else:
+                        self.act(self.players.index(i), data.action)
+                        self.sendMap(i)
             except KeyboardInterrupt:
                 self.terminate()
+
+    def act(self, player, action):
+        position = self.playersPositions[player]
+        if action == 'u':
+            print("Player {0} wants to go up".format(player + 1))
+            self.playersPositions[player] = self.move(position, -1, 0)
+        elif action == 'd':
+            print("Player {0} wants to go down".format(player + 1))
+            self.playersPositions[player] = self.move(position, 1, 0)
+        elif action == 'l':
+            print("Player {0} wants to go left".format(player + 1))
+            self.playersPositions[player] = self.move(position, 0, -1)
+        elif action == 'r':
+            print("Player {0} wants to go right".format(player + 1))
+            self.playersPositions[player] = self.move(position, 0, 1)
+
+    def move(self, position, y, x):
+        ny = position.y + y
+        nx = position.x + x
+        if ny > 0 and ny < self.size.y:
+            position.y = ny
+        if nx > 0 and nx < self.size.x:
+            position.x = nx
+        return position
 
     def terminate(self):
         self.running = False
