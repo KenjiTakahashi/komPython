@@ -7,6 +7,7 @@ import cPickle as pickle
 import sys
 import time
 from random import randint
+from threading import Thread
 from protocolObjects import Countdown, Map, Position
 
 
@@ -20,17 +21,21 @@ class Server(object):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind(('', port))
         self.server.listen(Server.BACKLOG)
+        self.running = True
 
     def run(self):
-        while True:
+        t = Thread(target=self.serve)
+        t.start()
+        while self.running:
             try:
                 sock, addr = self.server.accept()
                 print("Received connection from {0}".format(addr))
-                self.serve(sock, addr)
-            except KeyboardInterrupt:
-                break
+                self.addClient(sock, addr)
+            except (KeyboardInterrupt, socket.error):
+                pass
+        t.join()
 
-    def serve(self, sock, addr):
+    def addClient(self, sock, addr):
         self.players.append(sock)
         self.playersPositions.append(Position(
             randint(1, self.size.y), randint(1, self.size.x)
@@ -43,13 +48,23 @@ class Server(object):
             time.sleep(1)
         print("Sending map to {0}".format(addr))
         sock.sendall(pickle.dumps(Map([], self.playersPositions)))
-        while True:
-            try:
-                pass
-            except KeyboardInterrupt:
-                break
-        sock.close()
-        print("Connection to {0} terminated".format(addr))
+
+    def serve(self):
+        while self.running:
+            input, _, _ = select(self.players + [sys.stdin], [], [])
+            for i in input:
+                if i == sys.stdin:
+                    sys.stdin.readline()
+                    self.terminate()
+                else:
+                    print(pickle.loads(input))
+
+    def terminate(self):
+        self.running = False
+        for player in self.players:
+            player.close()
+        self.server.shutdown(socket.SHUT_RDWR)
+        self.server.close()
 
 
 if __name__ == '__main__':
