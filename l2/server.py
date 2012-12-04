@@ -7,7 +7,6 @@ import cPickle as pickle
 import sys
 import time
 from random import randint
-from threading import Thread
 from protocolObjects import Countdown, Map, Position
 
 
@@ -24,16 +23,16 @@ class Server(object):
         self.running = True
 
     def run(self):
-        t = Thread(target=self.serve)
-        t.start()
-        while self.running:
+        while len(self.players) < 5:
             try:
                 sock, addr = self.server.accept()
                 print("Received connection from {0}".format(addr))
                 self.addClient(sock, addr)
             except (KeyboardInterrupt, socket.error):
-                pass
-        t.join()
+                break
+        if self.running:
+            self.serve()
+        print("Terminating...")
 
     def addClient(self, sock, addr):
         self.players.append(sock)
@@ -51,13 +50,12 @@ class Server(object):
 
     def serve(self):
         while self.running:
-            input, _, _ = select(self.players + [sys.stdin], [], [])
-            for i in input:
-                if i == sys.stdin:
-                    sys.stdin.readline()
-                    self.terminate()
-                else:
+            try:
+                input, _, _ = select(self.players, [], [])
+                for i in input:
                     print(pickle.loads(input))
+            except KeyboardInterrupt:
+                self.terminate()
 
     def terminate(self):
         self.running = False
