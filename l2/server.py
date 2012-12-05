@@ -145,14 +145,17 @@ class Server(object):
                 return True
             return False
 
-        def crashed(p):
+        def crashed(p, pos=[]):
             for mine in self.mines:
                 if mine.position == p:
-                    return True
-            return False
+                    for p_ in pos:
+                        if crashed(Position(*p_), []):
+                            return 2
+                    return 1
+            return 0
         scores = [0] * len(self.players)
         # TODO: FIXME: refactor!!!
-        # FIXME: test for possibility to walk around mines
+        # FIXME: test for possibility to walk around mines (vert.)
         for i, position in enumerate(self.playersPositions):
             if i in self.cemetery:
                 scores[i] = -1
@@ -160,14 +163,28 @@ class Server(object):
             p = copy(position)
             dy = 0
             while not (vbounds(p) or crashed(p)):
-                while not (hbounds(p) or crashed(p)):
-                    scores[i] += 1
+                while not hbounds(p):
+                    crash = crashed(p, [
+                        (p.y - 1, p.x), (p.y + 1, p.x),
+                        (p.y - 1, p.x + 1), (p.y + 1, p.x + 1)
+                    ])
+                    if crash == 2:
+                        break
+                    if not crash:
+                        scores[i] += 1
                     p.x -= 1
                 p = copy(position)
                 p.y += dy
                 p.x += 1
-                while not (hbounds(p) or crashed(p)):
-                    scores[i] += 1
+                while not hbounds(p):
+                    crash = crashed(p, [
+                        (p.y - 1, p.x), (p.y + 1, p.x),
+                        (p.y - 1, p.x - 1), (p.y + 1, p.x - 1)
+                    ])
+                    if crash == 2:
+                        break
+                    if not crash:
+                        scores[i] += 1
                     p.x += 1
                 dy -= 1
                 p = copy(position)
@@ -176,14 +193,28 @@ class Server(object):
             dy = 1
             p.y += dy
             while not (vbounds(p) or crashed(p)):
-                while not (hbounds(p) or crashed(p)):
-                    scores[i] += 1
+                while not hbounds(p):
+                    crash = crashed(p, [
+                        (p.y - 1, p.x), (p.y + 1, p.x),
+                        (p.y - 1, p.x + 1), (p.y + 1, p.x + 1)
+                    ])
+                    if crash == 2:
+                        break
+                    if not crash:
+                        scores[i] += 1
                     p.x -= 1
                 p = copy(position)
                 p.y += dy
                 p.x += 1
-                while not (hbounds(p) or crashed(p)):
-                    scores[i] += 1
+                while not hbounds(p):
+                    crash = crashed(p, [
+                        (p.y - 1, p.x), (p.y + 1, p.x),
+                        (p.y - 1, p.x - 1), (p.y + 1, p.x - 1)
+                    ])
+                    if crash == 2:
+                        break
+                    if not crash:
+                        scores[i] += 1
                     p.x += 1
                 dy += 1
                 p = copy(position)
