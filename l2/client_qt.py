@@ -63,6 +63,13 @@ class ConnectionDialog(QtGui.QDialog):
         return self.port.value()
 
 
+COLORS = [
+    QtGui.QColor(Qt.red), QtGui.QColor(Qt.blue),
+    QtGui.QColor(Qt.yellow), QtGui.QColor(Qt.magenta),
+    QtGui.QColor(Qt.white)
+]
+
+
 class _Label(QtGui.QLabel):
     def __init__(self, w, h, parent=None):
         super(_Label, self).__init__(parent=parent)
@@ -77,17 +84,19 @@ class Field(_Label):
     def __init__(self, parent=None):
         super(Field, self).__init__(15, 15, parent=parent)
 
-    def setMine(self, color):
-        self.setText("<font color='{}'>M</font>".format(color.name()))
+    def setMine(self, id):
+        self.setText("<font color='{}'>M</font>".format(COLORS[id].name()))
 
-    def setPlayer(self, color):
-        self.setText("<font color='{}'>P</font>".format(color.name()))
+    def setPlayer(self, id):
+        self.setText("<font color='{}'>P</font>".format(COLORS[id].name()))
 
 
 class PlayerLabel(_Label):
-    def __init__(self, id, color, parent=None):
+    def __init__(self, id, parent=None):
         super(PlayerLabel, self).__init__(30, 30, parent=parent)
-        self.setText("<font color='{}'>{}</font>".format(color.name(), id))
+        self.setText("<font color='{}'>{}</font>".format(
+            COLORS[id].name(), id
+        ))
 
 
 class CDLabel(_Label):
@@ -98,16 +107,24 @@ class CDLabel(_Label):
         self.setText(str(cd))
 
 
+class MapWidget(QtGui.QWidget):
+    def __init__(self, w, h, parent=None):
+        super(Map, self).__init__(parent=parent)
+        self.setMaximumSize(w, h)
+        self.grabKeyboard()
+
+    def keyPressEvent(self, event):
+        pass
+
+    def keyReleaseEvent(self, event):
+        pass
+
+
 class Client(QtGui.QMainWindow):
     def __init__(self, host, port):
         super(Client, self).__init__()
         self.host = host
         self.port = port
-        self.colors = [
-            QtGui.QColor(Qt.red), QtGui.QColor(Qt.blue),
-            QtGui.QColor(Qt.yellow), QtGui.QColor(Qt.magenta),
-            QtGui.QColor(Qt.white)
-        ]
         self.cdLabel = CDLabel()
         self.infoLayout = QtGui.QHBoxLayout()
         self.infoLayout.addWidget(self.cdLabel)
@@ -173,9 +190,8 @@ class Client(QtGui.QMainWindow):
             for i in range(mapSize.x):
                 for j in range(mapSize.y):
                     self.mapLayout.addWidget(Field(), i, j)
-            mapWidget = QtGui.QWidget(parent=self)
+            mapWidget = MapWidget(mapSize.x * 15, mapSize.y * 15, parent=self)
             mapWidget.setLayout(self.mapLayout)
-            mapWidget.setMaximumSize(mapSize.x * 15, mapSize.y * 15)
             self.layout.addWidget(mapWidget)
 
     def update(self, mines):
@@ -184,12 +200,12 @@ class Client(QtGui.QMainWindow):
             pos = mine.position
             self.mapLayout.itemAtPosition(
                 pos.x - 1, pos.y - 1
-            ).widget().setMine(self.colors[mine.playerId])
+            ).widget().setMine(mine.playerId)
 
     def movePlayer(self, playerId, pos):
         self.mapLayout.itemAtPosition(
             pos.x - 1, pos.y - 1
-        ).widget().setPlayer(self.colors[playerId])
+        ).widget().setPlayer(playerId)
 
     def run(self):
         if not self.connected:
@@ -204,9 +220,7 @@ class Client(QtGui.QMainWindow):
             self.init(data.mapSize)
             if not hasattr(self, 'playerLabel'):
                 self.playerId = data.playerId
-                self.playerLabel = PlayerLabel(
-                    self.playerId, self.colors[self.playerId]
-                )
+                self.playerLabel = PlayerLabel(self.playerId)
                 self.infoLayout.insertWidget(0, self.playerLabel)
             self.cdLabel.setCD(data.number)
         elif isinstance(data, Map):
