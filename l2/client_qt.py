@@ -7,9 +7,9 @@ import cPickle as pickle
 from time import sleep
 
 from PyQt4 import QtGui
-from PyQt4.QtCore import QTimer, Qt
+from PyQt4.QtCore import QTimer, Qt, pyqtSignal
 
-from protocolObjects import Countdown, Map, Result
+from protocolObjects import Countdown, Map, Result, PlayerAction
 
 
 class ConnectionDialog(QtGui.QDialog):
@@ -83,12 +83,20 @@ class _Label(QtGui.QLabel):
 class Field(_Label):
     def __init__(self, parent=None):
         super(Field, self).__init__(15, 15, parent=parent)
+        self.mined = False
 
     def setMine(self, id):
         self.setText("<font color='{}'>M</font>".format(COLORS[id].name()))
+        self.mined = True
 
     def setPlayer(self, id):
         self.setText("<font color='{}'>P</font>".format(COLORS[id].name()))
+
+    def removePlayer(self, id):
+        if not self.mined:
+            self.clear()
+        else:
+            self.setText("<font color='{}'>M</font>".format(COLORS[id].name()))
 
 
 class PlayerLabel(_Label):
@@ -107,17 +115,33 @@ class CDLabel(_Label):
         self.setText(str(cd))
 
 
+class ResultsLabel(_Label):
+    def __init__(self, parent=None):
+        super(ResultsLabel, self).__init__(60, 30, parent=parent)
+
+
 class MapWidget(QtGui.QWidget):
+    keyPressed = pyqtSignal(unicode)
+
     def __init__(self, w, h, parent=None):
-        super(Map, self).__init__(parent=parent)
+        super(MapWidget, self).__init__(parent=parent)
         self.setMaximumSize(w, h)
         self.grabKeyboard()
 
     def keyPressEvent(self, event):
-        pass
-
-    def keyReleaseEvent(self, event):
-        pass
+        k = event.key()
+        if k == Qt.Key_Left:
+            self.keyPressed.emit('l')
+        elif k == Qt.Key_Right:
+            self.keyPressed.emit('r')
+        elif k == Qt.Key_Up:
+            self.keyPressed.emit('u')
+        elif k == Qt.Key_Down:
+            self.keyPressed.emit('d')
+        elif k == Qt.Key_Space:
+            self.keyPressed.emit('m')
+        elif k == Qt.Key_X:
+            pass
 
 
 class Client(QtGui.QMainWindow):
@@ -126,6 +150,7 @@ class Client(QtGui.QMainWindow):
         self.host = host
         self.port = port
         self.cdLabel = CDLabel()
+        self.dx = [0, 0]
         self.infoLayout = QtGui.QHBoxLayout()
         self.infoLayout.addWidget(self.cdLabel)
         self.infoLayout.addStretch()
@@ -192,6 +217,10 @@ class Client(QtGui.QMainWindow):
                     self.mapLayout.addWidget(Field(), i, j)
             mapWidget = MapWidget(mapSize.x * 15, mapSize.y * 15, parent=self)
             mapWidget.setLayout(self.mapLayout)
+
+            def move(action):
+                self.send(PlayerAction(action))
+            mapWidget.keyPressed.connect(move)
             self.layout.addWidget(mapWidget)
 
     def update(self, mines):
@@ -199,12 +228,17 @@ class Client(QtGui.QMainWindow):
         for mine in mines:
             pos = mine.position
             self.mapLayout.itemAtPosition(
-                pos.x - 1, pos.y - 1
+                pos.y - 1, pos.x - 1
             ).widget().setMine(mine.playerId)
 
     def movePlayer(self, playerId, pos):
+        if hasattr(self, 'position'):
+            self.mapLayout.itemAtPosition(
+                self.position[0], self.position[1]
+            ).widget().removePlayer(playerId)
+        self.position = [pos.y - 1, pos.x - 1]
         self.mapLayout.itemAtPosition(
-            pos.x - 1, pos.y - 1
+            pos.y - 1, pos.x - 1
         ).widget().setPlayer(playerId)
 
     def run(self):
