@@ -116,8 +116,11 @@ class CDLabel(_Label):
 
 
 class ResultsLabel(_Label):
-    def __init__(self, parent=None):
-        super(ResultsLabel, self).__init__(60, 30, parent=parent)
+    def __init__(self, winners, scores, parent=None):
+        super(ResultsLabel, self).__init__(120, 30, parent=parent)
+        self.setText("{}\n{}".format(
+            ",".join(map(str, winners)), ",".join(map(str, scores))
+        ))
 
 
 class MapWidget(QtGui.QWidget):
@@ -232,6 +235,10 @@ class Client(QtGui.QMainWindow):
             self.mapLayout.itemAtPosition(
                 pos.y - 1, pos.x - 1
             ).widget().setMine(mine.playerId)
+
+    def end(self, results):
+        self.results = ResultsLabel(results.winners, results.scores)
+        self.infoLayout.insertWidget(2, self.results)
 
     def movePlayer(self, playerId, pos):
         if hasattr(self, 'position'):
