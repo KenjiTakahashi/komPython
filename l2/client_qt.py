@@ -141,7 +141,9 @@ class MapWidget(QtGui.QWidget):
         elif k == Qt.Key_Space:
             self.keyPressed.emit('m')
         elif k == Qt.Key_X:
-            pass
+            self.keyPressed.emit('e')
+        elif k == Qt.Key_C:
+            self.keyPressed.emit('c')
 
 
 class Client(QtGui.QMainWindow):
@@ -246,6 +248,7 @@ class Client(QtGui.QMainWindow):
             self.connect()
         if not self.running:
             return
+        self.msg.hide()
         data = self.receive()
         if data is None:
             return
