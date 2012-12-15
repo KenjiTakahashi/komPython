@@ -131,101 +131,25 @@ class Server(object):
                 ).pop()], [])
 
     def end(self, player):
-        def hbounds(p):
-            if p == Position(p.y, 0):
-                return True
-            if p == Position(p.y, self.size.x + 1):
-                return True
-            return False
-
-        def vbounds(p):
-            if p == Position(0, p.x):
-                return True
-            if p == Position(self.size.y + 1, p.x):
-                return True
-            return False
-
-        def crashed(p, pos=[]):
-            for mine in self.mines:
-                if mine.position == p:
-                    for p_ in pos:
-                        if crashed(Position(*p_), []):
-                            return 2
-                    return 1
-            return 0
+        minesPositions = [m.position for m in self.mines]
         scores = [0] * len(self.players)
-        # TODO: FIXME: refactor!!!
-        # FIXME: test for possibility to walk around mines (vert.)
-        for i, position in enumerate(self.playersPositions):
-            if i in self.cemetery:
-                scores[i] = -1
-                continue
-            p = copy(position)
-            dy = 0
-            while not (vbounds(p) or crashed(p)):
-                while not hbounds(p):
-                    crash = crashed(p, [
-                        (p.y - 1, p.x), (p.y + 1, p.x),
-                        (p.y - 1, p.x + 1), (p.y + 1, p.x + 1)
-                    ])
-                    if crash == 2:
-                        break
-                    if not crash:
-                        scores[i] += 1
-                    p.x -= 1
-                p = copy(position)
-                p.y += dy
-                p.x += 1
-                while not hbounds(p):
-                    crash = crashed(p, [
-                        (p.y - 1, p.x), (p.y + 1, p.x),
-                        (p.y - 1, p.x - 1), (p.y + 1, p.x - 1)
-                    ])
-                    if crash == 2:
-                        break
-                    if not crash:
-                        scores[i] += 1
-                    p.x += 1
-                dy -= 1
-                p = copy(position)
-                p.y += dy
-            p = copy(position)
-            dy = 1
-            p.y += dy
-            while not (vbounds(p) or crashed(p)):
-                while not hbounds(p):
-                    crash = crashed(p, [
-                        (p.y - 1, p.x), (p.y + 1, p.x),
-                        (p.y - 1, p.x + 1), (p.y + 1, p.x + 1)
-                    ])
-                    if crash == 2:
-                        break
-                    if not crash:
-                        scores[i] += 1
-                    p.x -= 1
-                p = copy(position)
-                p.y += dy
-                p.x += 1
-                while not hbounds(p):
-                    crash = crashed(p, [
-                        (p.y - 1, p.x), (p.y + 1, p.x),
-                        (p.y - 1, p.x - 1), (p.y + 1, p.x - 1)
-                    ])
-                    if crash == 2:
-                        break
-                    if not crash:
-                        scores[i] += 1
-                    p.x += 1
-                dy += 1
-                p = copy(position)
-                p.y += dy
-        s_ = 0
+        highest = 0
         winners = list()
-        for i, s in enumerate(scores):
-            if s > s_:
-                s_ = s
+        for i, pos in enumerate(self.playersPositions):
+            q = [pos]
+            while q:
+                n = q.pop()
+                if n not in minesPositions:
+                    minesPositions.append(Position(n.y, n.x))
+                    q.append(Position(n.y, n.x - 1))
+                    q.append(Position(n.y, n.x + 1))
+                    q.append(Position(n.y - 1, n.x))
+                    q.append(Position(n.y + 1, n.x))
+                    scores[i] += 1
+            if scores[i] > highest:
+                highest = scores[i]
                 winners = [i]
-            elif s == s_:
+            elif scores[i] == highest:
                 winners.append(i)
         self.endgame = (winners, scores)
         print("Game ended with results {0}".format(self.endgame))

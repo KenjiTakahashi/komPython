@@ -220,13 +220,15 @@ class Client(QtGui.QMainWindow):
             for i in range(mapSize.x):
                 for j in range(mapSize.y):
                     self.mapLayout.addWidget(Field(), i, j)
-            mapWidget = MapWidget(mapSize.x * 15, mapSize.y * 15, parent=self)
-            mapWidget.setLayout(self.mapLayout)
+            self.mapWidget = MapWidget(
+                mapSize.x * 15, mapSize.y * 15, parent=self
+            )
+            self.mapWidget.setLayout(self.mapLayout)
 
             def move(action):
                 self.send(PlayerAction(action))
-            mapWidget.keyPressed.connect(move)
-            self.layout.addWidget(mapWidget)
+            self.mapWidget.keyPressed.connect(move)
+            self.layout.addWidget(self.mapWidget)
 
     def update(self, mines):
         self.cdLabel.setText('')
@@ -239,6 +241,7 @@ class Client(QtGui.QMainWindow):
     def end(self, results):
         self.results = ResultsLabel(results.winners, results.scores)
         self.infoLayout.insertWidget(2, self.results)
+        self.mapWidget.keyPressed.disconnect()
 
     def movePlayer(self, playerId, pos):
         if hasattr(self, 'position'):
