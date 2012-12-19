@@ -74,7 +74,7 @@ class Server(object):
                     try:
                         data = pickle.loads(i.recv(4096))
                     except (EOFError, socket.error):
-                        pass
+                        self.running = False
                     else:
                         index = self.players.index(i)
                         if not index in self.cemetery:
@@ -84,7 +84,8 @@ class Server(object):
                         else:
                             self.sendMap(i)
             except KeyboardInterrupt:
-                self.terminate()
+                self.running = False
+        self.terminate()
 
     def act(self, player, action):
         position = self.playersPositions[player]
