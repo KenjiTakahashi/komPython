@@ -82,21 +82,40 @@ class _Label(QtGui.QLabel):
 
 class Field(_Label):
     def __init__(self, parent=None):
-        super(Field, self).__init__(15, 15, parent=parent)
-        self.mined = False
+        super(Field, self).__init__(20, 20, parent=parent)
+        self.mineId = None
+        self.playerId = None
+        self.playerPath = QtGui.QPainterPath()
+        self.playerPath.setFillRule(Qt.WindingFill)
+        self.playerPath.addEllipse(5, 5, 10, 10)
+        self.minePath = QtGui.QPainterPath()
+        self.minePath.setFillRule(Qt.WindingFill)
+        self.minePath.addEllipse(4, 4, 12, 12)
+        self.minePath.addRect(1, 9, 18, 2)
+        self.minePath.addRect(9, 1, 2, 18)
 
     def setMine(self, id):
-        self.setText("<font color='{}'>M</font>".format(COLORS[id].name()))
-        self.mined = True
+        self.mineId = id
+        self.update()
 
     def setPlayer(self, id):
-        self.setText("<font color='{}'>P</font>".format(COLORS[id].name()))
+        self.playerId = id
+        self.update()
 
-    def removePlayer(self, id):
-        if not self.mined:
-            self.clear()
-        else:
-            self.setText("<font color='{}'>M</font>".format(COLORS[id].name()))
+    def removePlayer(self):
+        self.playerId = None
+        self.update()
+
+    def paintEvent(self, event):
+        super(Field, self).paintEvent(event)
+        painter = QtGui.QPainter(self)
+        painter.setRenderHint(QtGui.QPainter.Antialiasing)
+        if self.mineId is not None:
+            painter.setBrush(QtGui.QBrush(COLORS[self.mineId]))
+            painter.drawPath(self.minePath)
+        if self.playerId is not None:
+            painter.setBrush(QtGui.QBrush(COLORS[self.playerId]))
+            painter.drawPath(self.playerPath)
 
 
 class PlayerLabel(_Label):
@@ -119,7 +138,8 @@ class ResultsLabel(_Label):
     def __init__(self, winners, scores, parent=None):
         super(ResultsLabel, self).__init__(120, 30, parent=parent)
         self.setText("{}\n{}".format(
-            ",".join(map(str, winners)), ",".join(map(str, scores))
+            ",".join(map(str, winners)),
+            ",".join(scores and map(str, scores) or "last man standing")
         ))
 
 
@@ -130,6 +150,10 @@ class MapWidget(QtGui.QWidget):
         super(MapWidget, self).__init__(parent=parent)
         self.setMaximumSize(w, h)
         self.grabKeyboard()
+
+    def clear(self):
+        for field in self.children()[1:]:
+            field.removePlayer()
 
     def keyPressEvent(self, event):
         k = event.key()
@@ -168,6 +192,7 @@ class Client(QtGui.QMainWindow):
         widget.setLayout(self.layout)
         self.setCentralWidget(widget)
         self.connected = False
+        self.dirty = list()
         self.loop = QTimer(self)
         self.loop.timeout.connect(self.run)
         self.loop.start(0)
@@ -221,7 +246,7 @@ class Client(QtGui.QMainWindow):
                 for j in range(mapSize.y):
                     self.mapLayout.addWidget(Field(), i, j)
             self.mapWidget = MapWidget(
-                mapSize.x * 15, mapSize.y * 15, parent=self
+                mapSize.x * 20, mapSize.y * 20, parent=self
             )
             self.mapWidget.setLayout(self.mapLayout)
 
@@ -244,14 +269,10 @@ class Client(QtGui.QMainWindow):
         self.mapWidget.keyPressed.disconnect()
 
     def movePlayer(self, playerId, pos):
-        if hasattr(self, 'position'):
-            self.mapLayout.itemAtPosition(
-                self.position[0], self.position[1]
-            ).widget().removePlayer(playerId)
-        self.position = [pos.y - 1, pos.x - 1]
         self.mapLayout.itemAtPosition(
             pos.y - 1, pos.x - 1
         ).widget().setPlayer(playerId)
+        self.dirty.append((pos.y - 1, pos.x - 1))
 
     def run(self):
         if not self.connected:
@@ -273,6 +294,8 @@ class Client(QtGui.QMainWindow):
         elif isinstance(data, Map):
             print("Received Map object")
             self.update(data.mines)
+            for x, y in self.dirty:
+                self.mapLayout.itemAtPosition(x, y).widget().removePlayer()
             for i, pos in enumerate(data.playersPositions):
                 self.movePlayer(i, pos)
         elif isinstance(data, Result):
