@@ -73,8 +73,7 @@ COLORS = [
 class _Label(QtGui.QLabel):
     def __init__(self, w, h, parent=None):
         super(_Label, self).__init__(parent=parent)
-        self.setMinimumSize(w, h)
-        self.setMaximumSize(w, h)
+        self.setFixedSize(w, h)
         self.setFrameShape(QtGui.QFrame.Box)
         self.setFrameShadow(QtGui.QFrame.Sunken)
         self.setAlignment(Qt.AlignCenter)
@@ -120,27 +119,27 @@ class Field(_Label):
 
 class PlayerLabel(_Label):
     def __init__(self, id, parent=None):
-        super(PlayerLabel, self).__init__(30, 30, parent=parent)
-        self.setText("<font color='{}'>{}</font>".format(
+        super(PlayerLabel, self).__init__(40, 40, parent=parent)
+        self.setText("<font size='20' color='{}'>{}</font>".format(
             COLORS[id].name(), id
         ))
 
 
 class CDLabel(_Label):
     def __init__(self, parent=None):
-        super(CDLabel, self).__init__(30, 30, parent=parent)
+        super(CDLabel, self).__init__(40, 40, parent=parent)
 
     def setCD(self, cd):
-        self.setText(str(cd))
+        self.setText("<font size='20'>{}</font>".format(cd))
 
 
 class ResultsLabel(_Label):
-    def __init__(self, winners, scores, parent=None):
-        super(ResultsLabel, self).__init__(120, 30, parent=parent)
+    def __init__(self, winners, scores, width=120, parent=None):
+        super(ResultsLabel, self).__init__(width, 40, parent=parent)
         scoresStr = ", ".join([
             "{}: {}".format(i, s) for i, s in enumerate(scores)
         ])
-        self.setText("{}\n{}".format(
+        self.setText("winner(s): {}\nscores: {}".format(
             ", ".join(map(str, winners)), scoresStr or "last man standing"
         ))
 
@@ -266,7 +265,10 @@ class Client(QtGui.QMainWindow):
             ).widget().setMine(mine.playerId)
 
     def end(self, results):
-        self.results = ResultsLabel(results.winners, results.scores)
+        self.results = ResultsLabel(
+            results.winners, results.scores,
+            self.mapWidget.width() - 92
+        )
         self.infoLayout.insertWidget(2, self.results)
         self.mapWidget.keyPressed.disconnect()
 
