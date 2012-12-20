@@ -113,6 +113,8 @@ class Server(object):
     def move(self, player, position, y, x):
         ny = position.y + y
         nx = position.x + x
+        if Position(ny, nx) in self.playersPositions:
+            return
         if ny > 0 and ny <= self.size.y:
             position.y = ny
         if nx > 0 and nx <= self.size.x:
