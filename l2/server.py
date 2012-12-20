@@ -132,25 +132,39 @@ class Server(object):
                 ).pop()], [])
 
     def end(self, player):
-        minesPositions = [m.position for m in self.mines]
         scores = [0] * len(self.players)
         highest = 0
         winners = list()
         for i, pos in enumerate(self.playersPositions):
+            if i in self.cemetery:
+                continue
+            minesPositions = [m.position for m in self.mines]
             q = [pos]
             while q:
                 n = q.pop()
                 if n not in minesPositions:
                     minesPositions.append(Position(n.y, n.x))
-                    q.append(Position(n.y, n.x - 1))
-                    q.append(Position(n.y, n.x + 1))
-                    q.append(Position(n.y - 1, n.x))
-                    q.append(Position(n.y + 1, n.x))
                     scores[i] += 1
+                    if n.x > 0:
+                        q.append(Position(n.y, n.x - 1))
+                        if n.y > 0:
+                            q.append(Position(n.y - 1, n.x - 1))
+                        if n.y < self.size.y - 1:
+                            q.append(Position(n.y + 1, n.x - 1))
+                    if n.x < self.size.x - 1:
+                        q.append(Position(n.y, n.x + 1))
+                        if n.y > 0:
+                            q.append(Position(n.y - 1, n.x + 1))
+                        if n.y < self.size.y - 1:
+                            q.append(Position(n.y + 1, n.x + 1))
+                    if n.y > 0:
+                        q.append(Position(n.y - 1, n.x))
+                    if n.y < self.size.y - 1:
+                        q.append(Position(n.y + 1, n.x))
             if scores[i] > highest:
                 highest = scores[i]
                 winners = [i]
-            elif scores[i] == highest:
+            elif scores[i] == highest and i != player:
                 winners.append(i)
         self.endgame = (winners, scores)
         print("Game ended with results {0}".format(self.endgame))

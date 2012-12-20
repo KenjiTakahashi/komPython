@@ -137,9 +137,11 @@ class CDLabel(_Label):
 class ResultsLabel(_Label):
     def __init__(self, winners, scores, parent=None):
         super(ResultsLabel, self).__init__(120, 30, parent=parent)
+        scoresStr = ", ".join([
+            "{}: {}".format(i, s) for i, s in enumerate(scores)
+        ])
         self.setText("{}\n{}".format(
-            ",".join(map(str, winners)),
-            ",".join(scores and map(str, scores) or "last man standing")
+            ", ".join(map(str, winners)), scoresStr or "last man standing"
         ))
 
 
