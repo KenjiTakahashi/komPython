@@ -187,7 +187,6 @@ class Client(QtGui.QMainWindow):
         self.msg = QtGui.QLabel()
         self.layout = QtGui.QVBoxLayout()
         self.layout.addWidget(self.msg)
-        self.layout.addStretch()
         self.layout.addLayout(self.infoLayout)
         widget = QtGui.QWidget()
         widget.setLayout(self.layout)
@@ -250,11 +249,13 @@ class Client(QtGui.QMainWindow):
                 mapSize.x * 20, mapSize.y * 20, parent=self
             )
             self.mapWidget.setLayout(self.mapLayout)
+            scrollArea = QtGui.QScrollArea()
+            scrollArea.setWidget(self.mapWidget)
 
             def move(action):
                 self.send(PlayerAction(action))
             self.mapWidget.keyPressed.connect(move)
-            self.layout.addWidget(self.mapWidget)
+            self.layout.addWidget(scrollArea)
 
     def update(self, mines):
         self.cdLabel.setText('')
