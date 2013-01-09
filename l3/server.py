@@ -12,10 +12,11 @@ from protocolObjects import PlayerAction
 
 
 class ServerProtocol(Protocol):
-    rec = ""
+    def __init__(self):
+        self.dead = False
+        self.rec = ""
 
     def connectionMade(self):
-        self.dead = False
         self.no = self.factory.addClient(self)
         self.position = self.factory.calculatePosition(self)
         countdown = Countdown(3, self.factory.getMapSize(), self.no)
@@ -33,15 +34,15 @@ class ServerProtocol(Protocol):
     def dataReceived(self, data):
         if not self.factory.run:
             return
-        ServerProtocol.rec += data
+        self.rec += data
         try:
-            result = pickle.loads(ServerProtocol.rec)
+            result = pickle.loads(self.rec)
         except (EOFError, pickle.UnpicklingError, ValueError):
-            ServerProtocol.rec += data
+            self.rec += data
         else:
             if isinstance(result, PlayerAction) and not self.dead:
                 self.serve(result.action)
-            ServerProtocol.rec = ""
+            self.rec = ""
 
     def serve(self, action):
         if action == 'u':
@@ -162,7 +163,7 @@ class Server(LimitTotalConnectionsFactory):
         winners = list()
         for i, client in enumerate(self.players):
             pos = client.position
-            if i in self.cemetery:
+            if client.dead:
                 continue
             minesPositions = [m.position for m in self.mines]
             q = [pos]
