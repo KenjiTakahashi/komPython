@@ -5,6 +5,7 @@ from twisted.internet.defer import Deferred
 from twisted.internet.protocol import Protocol, ClientFactory
 import sys
 import cPickle as pickle
+from cStringIO import StringIO
 
 from PyQt4 import QtGui
 from PyQt4.QtCore import Qt, pyqtSignal
@@ -214,7 +215,7 @@ class GUI(QtGui.QMainWindow):
             scrollArea.setWidget(self.mapWidget)
 
             def move(action):
-                self.factory.send(PlayerAction(action))
+                self.factory.send(action)
             self.mapWidget.keyPressed.connect(move)
             self.layout.addWidget(scrollArea)
 
@@ -273,7 +274,7 @@ class GUI(QtGui.QMainWindow):
 
 class ClientProtocol(Protocol):
     def __init__(self):
-        self.rec = ""
+        self.rec = StringIO()
 
     def connectionMade(self):
         self.factory.run(self)
@@ -282,17 +283,24 @@ class ClientProtocol(Protocol):
         self.factory.stop()
 
     def dataReceived(self, data):
-        print(1)
-        self.rec += data
-        try:
-            result = pickle.loads(self.rec)
-        except (EOFError, pickle.UnpicklingError, ValueError):
-            self.rec += data
-        except Exception as e:
-            self.factory.fail(e)
-        else:
-            self.factory.notify(result)
-            self.rec = ""
+        self.rec.write(data)
+        self.rec.flush()
+        self.rec = StringIO(self.rec.getvalue())
+        pickling = True
+        while pickling:
+            try:
+                result = pickle.load(self.rec)
+            except (pickle.UnpicklingError, ValueError):
+                pickling = False
+            except EOFError:
+                self.rec.close()
+                self.rec = StringIO()
+                pickling = False
+            except Exception as e:
+                self.factory.fail(e)
+                pickling = False
+            else:
+                self.factory.notify(result)
 
     def send(self, obj):
         self.transport.write(pickle.dumps(obj))
@@ -315,7 +323,7 @@ class Client(ClientFactory):
         self.d.errback(why)
 
     def send(self, obj):
-        self.client.send(obj)
+        self.client.send(PlayerAction(obj))
 
     def get(self):
         self.d = Deferred()
