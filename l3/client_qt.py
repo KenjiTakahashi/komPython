@@ -192,7 +192,6 @@ class GUI(QtGui.QMainWindow):
         self.setCentralWidget(widget)
         self.dirty = list()
         self.receive()
-        self.run = False
 
     def receive(self):
         d = self.factory.get()
@@ -308,6 +307,9 @@ class ClientProtocol(Protocol):
 
 class Client(ClientFactory):
     protocol = ClientProtocol
+
+    def clientConnectionFailed(self, connector, reason):
+        connector.connect()
 
     def run(self, client):
         self.client = client
