@@ -266,9 +266,7 @@ class GUI(QtGui.QMainWindow):
         self.receive()
 
     def closeEvent(self, event):
-        from twisted.internet import reactor
-        reactor.stop()
-        sys.exit(0)
+        self.factory.stop()
 
 
 class ClientProtocol(Protocol):
@@ -316,7 +314,9 @@ class Client(ClientFactory):
 
     def stop(self):
         self.client = None
-        # FIXME: do sth more?
+        from twisted.internet import reactor
+        reactor.stop()
+        sys.exit(0)
 
     def notify(self, data):
         self.d.callback(data)
