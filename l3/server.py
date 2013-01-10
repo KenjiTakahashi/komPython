@@ -17,6 +17,7 @@ class ServerProtocol(Protocol):
         self.rec = ""
 
     def connectionMade(self):
+        print("A client has connected")
         self.no = self.factory.addClient(self)
         self.position = self.factory.calculatePosition(self)
         countdown = Countdown(3, self.factory.getMapSize(), self.no)
@@ -29,6 +30,7 @@ class ServerProtocol(Protocol):
         reactor.callLater(3, self.factory.sendMap, self)
 
     def connectionLost(self, reason):
+        print("A client has disconnected")
         self.factory.removeClient(self)
 
     def dataReceived(self, data):
@@ -100,6 +102,7 @@ class Server(LimitTotalConnectionsFactory):
         return protocol
 
     def refresh(self):
+        print("Sending new maps")
         for client in self.players:
             self.sendMap(client)
 
