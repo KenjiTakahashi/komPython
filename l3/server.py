@@ -27,7 +27,7 @@ class ServerProtocol(Protocol):
             reactor.callLater(
                 j, self.transport.write, pickle.dumps(countdown)
             )
-        reactor.callLater(3, self.factory.sendMap, self)
+        reactor.callLater(3, self.factory.refresh)
 
     def connectionLost(self, reason):
         print("A client has disconnected")
@@ -103,8 +103,10 @@ class Server(LimitTotalConnectionsFactory):
 
     def refresh(self):
         print("Sending new maps")
+        positions = [c.position for c in self.players]
+        data = pickle.dumps(Map(self.mines, positions))
         for client in self.players:
-            self.sendMap(client)
+            client.transport.write(data)
 
     def addClient(self, client):
         self.players.append(client)
@@ -112,10 +114,6 @@ class Server(LimitTotalConnectionsFactory):
 
     def removeClient(self, client):
         self.players.remove(client)
-
-    def sendMap(self, client):
-        positions = [c.position for c in self.players]
-        client.transport.write(pickle.dumps(Map(self.mines, positions)))
 
     def calculatePosition(self, client):
         while True:
