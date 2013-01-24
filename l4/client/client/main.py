@@ -10,9 +10,7 @@ from cStringIO import StringIO
 from PyQt4 import QtGui
 from PyQt4.QtCore import Qt, pyqtSignal
 
-from client import protocolObjects
-sys.modules['server.protocolObjects'] = protocolObjects
-from client.protocolObjects import Countdown, Map, Result, PlayerAction
+from lib.protocolObjects import Countdown, Map, Result, PlayerAction
 
 
 class ConnectionDialog(QtGui.QDialog):
@@ -318,7 +316,6 @@ class Client(ClientFactory):
         self.client = None
         from twisted.internet import reactor
         reactor.stop()
-        del sys.modules['server.protocolObjects']
         sys.exit(0)
 
     def notify(self, data):

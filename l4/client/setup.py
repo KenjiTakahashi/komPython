@@ -9,7 +9,7 @@ setup(
     version="0.1",
     author="Karol Woźniak",
     author_email="wozniakk@gmail.com",
-    packages=["client"],
+    packages=["client", "lib"],
     scripts=["scripts/client"],
     url="http://fake.url",
     license="MIT",

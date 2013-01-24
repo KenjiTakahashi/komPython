@@ -7,10 +7,8 @@ import cPickle as pickle
 from random import randint
 from copy import copy
 from server import protocolObjects
-import sys
-sys.modules['client.protocolObjects'] = protocolObjects
-from server.protocolObjects import Countdown, Map, Position, Mine, Result
-from server.protocolObjects import PlayerAction
+from lib.protocolObjects import Countdown, Map, Position, Mine, Result
+from lib.protocolObjects import PlayerAction
 
 
 class ServerProtocol(Protocol):
@@ -219,7 +217,6 @@ class Server(LimitTotalConnectionsFactory):
         self.run = False
         for player in self.players:
             player.transport.loseConnection()
-        del sys.modules['client.protocolObjects']
 
     def controlConnectedPlayers(self):
         return len(self.players)

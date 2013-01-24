@@ -2,7 +2,7 @@
 
 
 import sys
-from server.protocolObjects import Position
+from lib.protocolObjects import Position
 from server import playServer, controlServer
 
 
