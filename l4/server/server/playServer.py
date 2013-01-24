@@ -6,7 +6,7 @@ from twisted.protocols.policies import LimitTotalConnectionsFactory
 import cPickle as pickle
 from random import randint
 from copy import copy
-from server import protocolObjects
+
 from lib.protocolObjects import Countdown, Map, Position, Mine, Result
 from lib.protocolObjects import PlayerAction
 
